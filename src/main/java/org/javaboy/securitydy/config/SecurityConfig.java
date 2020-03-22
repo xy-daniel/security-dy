@@ -3,11 +3,13 @@ package org.javaboy.securitydy.config;
 import org.javaboy.securitydy.service.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
 
 import javax.annotation.Resource;
 
@@ -21,6 +23,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Resource
     UserService userService;
+    @Resource
+    MyFilter myFilter;
+    @Resource
+    MyAccessDecisionManager myAccessDecisionManager;
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -35,20 +41,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-                .antMatchers("/dba/**").hasRole("dba")
-                .antMatchers("/admin/**").hasRole("admin")
-                .antMatchers("/user/**").hasRole("user")
-                .anyRequest().authenticated()
-                .and().formLogin().permitAll()
-                .and().csrf().disable();
+                .withObjectPostProcessor(new ObjectPostProcessor<FilterSecurityInterceptor>() {
+                    @Override
+                    public <O extends FilterSecurityInterceptor> O postProcess(O o) {
+                        o.setAccessDecisionManager(myAccessDecisionManager);
+                        o.setSecurityMetadataSource(myFilter);
+                        return o;
+                    }
+                })
+                .and()
+                .formLogin()
+                .permitAll()
+                .and()
+                .csrf().disable();
     }
-
-//    //角色继承http://www.javaboy.org/2019/0613/springsecurity-role.html
-//    @Bean
-//    RoleHierarchy roleHierarchy(){
-//        RoleHierarchyImpl roleHierarchy = new RoleHierarchyImpl();
-//        String hierarchy = "ROLE_dba > ROLE_admin \n ROLE_admin > ROLE_user";
-//        roleHierarchy.setHierarchy(hierarchy);
-//        return roleHierarchy;
-//    }
 }
