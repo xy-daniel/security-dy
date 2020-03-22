@@ -1,6 +1,5 @@
 package org.javaboy.securitydy.mapper;
 
-import org.apache.ibatis.annotations.Mapper;
 import org.javaboy.securitydy.bean.Role;
 import org.javaboy.securitydy.bean.User;
 
